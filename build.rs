@@ -6,6 +6,7 @@ use std::path::PathBuf;
 // Minimum version of the TSS 2.0 libraries that this crate can use.
 const MINIMUM_VERSION: &str = "2.3.3";
 
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 fn main() {
     if cfg!(not(feature = "docs")) {
         let tss2_esys = pkg_config::Config::new()
@@ -58,4 +59,11 @@ fn main() {
             .write_to_file(out_path.join("tss2_esys_bindings.rs"))
             .unwrap_or_else(|_| panic!("Couldn't write bindings to {:?}!", out_path));
     }
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn main() {
+    println!("cargo:rustc-link-lib=tss2-esys");
+    println!("cargo:rustc-link-lib=tss2-tctildr");
+    println!("cargo:rustc-link-lib=tss2-mu");
 }

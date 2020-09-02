@@ -103,8 +103,11 @@ pub use tcti::Tcti;
     clippy::all,
 )]
 pub mod tss2_esys {
-    #[cfg(not(feature = "docs"))]
+    #[cfg(all(not(feature = "docs"), not(any(target_arch = "x86", target_arch = "x86_64"))))]
     include!(concat!(env!("OUT_DIR"), "/tss2_esys_bindings.rs"));
+
+    #[cfg(all(not(feature = "docs"), any(target_arch = "x86", target_arch = "x86_64")))]
+    include!("bindings_x86.rs");
 
     #[cfg(feature = "docs")]
     include!(concat!(env!("CARGO_MANIFEST_DIR"), "/doc_bindings.rs"));
