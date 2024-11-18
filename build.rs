@@ -1,10 +1,8 @@
 // Copyright 2019 Contributors to the Parsec project.
 // SPDX-License-Identifier: Apache-2.0
-use std::env;
-use std::path::PathBuf;
 
 // Minimum version of the TSS 2.0 libraries that this crate can use.
-const MINIMUM_VERSION: &str = "2.3.3";
+// const MINIMUM_VERSION: &str = "2.3.3";
 
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 fn main() {
