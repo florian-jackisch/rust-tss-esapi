@@ -13,7 +13,7 @@ use crate::tss2_esys::*;
 use crate::utils::{
     Hierarchy, PcrData, PublicParmsUnion, Signature, TpmaSession, TpmaSessionBuilder, TpmsContext,
 };
-use crate::{Error, Result, WrapperErrorKind as ErrorKind};
+use crate::{tss2_esys, Error, Result, WrapperErrorKind as ErrorKind};
 use log::{error, info};
 use mbox::MBox;
 use std::collections::HashSet;
@@ -85,7 +85,7 @@ impl Context {
 
         let ret = Esys_Initialize(
             &mut esys_context,
-            tcti_context.as_mut().unwrap().as_mut_ptr(), // will not panic as per how tcti_context is initialised
+            MBox::<TSS2_TCTI_OPAQUE_CONTEXT_BLOB>::as_mut_ptr(&mut tcti_context.as_mut().unwrap()), // will not panic as per how tcti_context is initialised
             null_mut(),
         );
         let ret = Error::from_tss_rc(ret);
@@ -1597,7 +1597,8 @@ impl Context {
 
     /// Returns a mutable reference to the native ESYS context handle.
     fn mut_context(&mut self) -> *mut ESYS_CONTEXT {
-        self.esys_context.as_mut().unwrap().as_mut_ptr() // will only fail if called from Drop after .take()
+        MBox::<tss2_esys::ESYS_CONTEXT>::as_mut_ptr(&mut self.esys_context.as_mut().unwrap())
+        // will only fail if called from Drop after .take()
     }
 }
 
@@ -1617,10 +1618,14 @@ impl Drop for Context {
         let tcti_context = self.tcti_context.take().unwrap(); // should not fail based on how the context is initialised/used
 
         // Close the TCTI context.
-        unsafe { Tss2_TctiLdr_Finalize(&mut tcti_context.into_raw()) };
+        unsafe {
+            Tss2_TctiLdr_Finalize(
+                &mut MBox::<tss2_esys::TSS2_TCTI_OPAQUE_CONTEXT_BLOB>::into_raw(tcti_context),
+            )
+        };
 
         // Close the context.
-        unsafe { Esys_Finalize(&mut esys_context.into_raw()) };
+        unsafe { Esys_Finalize(&mut MBox::<tss2_esys::ESYS_CONTEXT>::into_raw(esys_context)) };
         info!("Context closed.");
     }
 }
